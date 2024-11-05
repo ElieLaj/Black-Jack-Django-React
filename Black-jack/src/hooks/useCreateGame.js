@@ -1,20 +1,22 @@
 import { response } from "express";
 
-export function useCreateGame() {
+export default function useCreateGame() {
     const createGame = () => {
         fetch("http://localhost:8000/api/start_game", {
             method: "POST",
             body: {
                 name: "Black Jack",
                 players: [
-                    { id: 1, name: "Player 1", score: 30 },
-                    { id: 2, name: "Player 2", score: 10 },
+                    "Tim2o", "2lie, Arthurochrome"
                 ],
             }
         }).then((response) => {
             console.log(response);
-        })
+        }).catch((error) => {
+            console.log(error);
+        });
     }
 
     return { createGame } ;
 }
+
