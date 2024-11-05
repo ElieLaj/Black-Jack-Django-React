@@ -17,7 +17,7 @@ export function Table({players}) {
                 <tbody>
                     {
                         players.map((player) => (
-                            <PlayerRow player={player} />
+                            <PlayerRow key={ player.id } player={player} />
                         ))
                     }
                 </tbody>
