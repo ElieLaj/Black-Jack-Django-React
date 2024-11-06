@@ -17,11 +17,22 @@ class Game(models.Model):
     name = models.CharField(max_length=50)
     turn = models.IntegerField(default=0)
     ended = models.BooleanField(default=False)
-    dealer = models.ForeignKey('Player', related_name='dealt_games', on_delete=models.SET_NULL, null=True, blank=True)
     winner = models.ForeignKey('Player', related_name='won_games', on_delete=models.SET_NULL, null=True, blank=True, default=None)
-  
-class Player(models.Model):
-    game = models.ForeignKey(Game, related_name='players', on_delete=models.CASCADE)
+    dealer = models.ForeignKey('Dealer', related_name='dealt_games', on_delete=models.SET_NULL, null=True, blank=True)
+
+class PlayerBase(models.Model):
     name = models.CharField(max_length=50)
     score = models.IntegerField(default=0)
     out = models.BooleanField(default=False)
+
+    class Meta:
+        abstract = True
+      
+class Player(PlayerBase):
+    game = models.ForeignKey(Game, related_name='players', on_delete=models.CASCADE)
+
+class Dealer(PlayerBase):
+    max_score = models.IntegerField(default=17)
+    game = models.ForeignKey(Game, related_name='dealer', on_delete=models.CASCADE)
+
+

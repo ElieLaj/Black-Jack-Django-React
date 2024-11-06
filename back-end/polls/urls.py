@@ -1,5 +1,5 @@
 from ninja import NinjaAPI, ModelSchema, Schema
-from polls.models import Game, Player
+from polls.models import Game, Player, Dealer
 from django.http import Http404
 from tools.Dice import *
 from typing import Optional
@@ -11,18 +11,18 @@ class PlayerSchema(ModelSchema):
         model = Player
         fields = ["id", "name", "score", "out"]
 
+class DealerSchema(ModelSchema):
+    class Meta:
+        model = Dealer
+        fields = ["id", "name", "score", "out", "max_score"]
+
 class GameSchema(ModelSchema):
     class Meta:
         model = Game
-        fields = ["id", "name", "turn", "ended"]
+        fields = ["id", "name", "turn", "ended", "dealer", "winner"]
     players: list[PlayerSchema]
-    dealer: PlayerSchema
+    dealer: DealerSchema
     winner: Optional[PlayerSchema]
-
-    @staticmethod
-    def resolve_players(obj):
-        players = obj.players.exclude(id=obj.dealer_id)
-        return players
 
 class AddGameSchema(Schema):
     name: str
@@ -39,7 +39,7 @@ def add(request, add_game: AddGameSchema):
         name = add_game.name
         )
     
-    dealer = Player.objects.create(name="Dealer", game=game)
+    dealer = Dealer.objects.create(name="Dealer", game=game)
     game.dealer = dealer
     game.save()
 
