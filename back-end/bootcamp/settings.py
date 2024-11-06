@@ -39,7 +39,20 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'polls.apps.PollsConfig',
     'corsheaders',
+    'channels',
+
 ]
+
+ASGI_APPLICATION = 'bootcamp.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -127,7 +140,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost",
-    "http://127.0.0.1:5173",
-]

@@ -3,6 +3,8 @@ from polls.models import Game, Player
 from django.http import Http404
 from tools.Dice import *
 from typing import Optional
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 api = NinjaAPI()
 
@@ -28,6 +30,10 @@ class AddGameSchema(Schema):
     name: str
     players: list[str]
 
+class JoinGameSchema(Schema):
+    game_id: str
+    players: list[str]
+
 class ThrowDicesSchema(Schema):
     game_id: str
     nb_dices: int
@@ -50,6 +56,29 @@ def add(request, add_game: AddGameSchema):
             game = game
         )
 
+    return game
+
+@api.put("/join_game/{game_id}/{players}", response=GameSchema)
+def join(request, game_id, player):
+    try:
+        game = Game.objects.get(pk=game_id)
+    except Game.DoesNotExist:
+        raise Http404("Game does not exist")
+
+    Player.objects.create(
+        name = player,
+        game = game
+    )
+
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f'game_{game_id}',
+        {
+            'type': 'game_message',
+            'message': f'Player {player} has joined.',
+        }
+    )
+    game.save()
     return game
 
 @api.get("/game/{game_id}", response=GameSchema)
@@ -102,8 +131,28 @@ def dice_throw(request, game_id: int, nb_dices: int):
             game.ended = True
             if not game.dealer.out or game.dealer.score == 21:
                 game.winner = game.dealer
+            else:
+                players = list(game.players.exclude(pk=-1))
+                maxi = players[0]
+                for player in game.players:
+                    if player.score >= maxi.score and player.score <= 21:
+                        maxi = player
+                game.winner = maxi
+        game.turn += 1
 
         game.save()
         return game
     except Game.DoesNotExist:
         raise Http404("Game does not exist")
+    
+
+@api.patch("/game/player_out/{game_id}/{player_id}", response=GameSchema)
+def patch_player_out(request, game_id: int, player_id: int):
+    try:
+        game = Game.objects.get(pk=game_id)
+        player = Player.objects.get(pk=player_id)
+        player.out = True
+        player.save()
+    except Game.DoesNotExist:
+        raise Http404("Game does not exist")
+    return game

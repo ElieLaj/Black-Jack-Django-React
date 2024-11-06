@@ -87,3 +87,65 @@ td {
   list-style-type: none;
   padding: 0;
 }
+
+.ButtonHolder {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.ButtonHolder > button {
+  padding: 0.5em 1em;
+  font-size: 1rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: #41D1FF;
+  border: 2px solid #41D1FF;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  transition: background 300ms, color 300ms;
+  width: 30%;
+}
+
+.ButtonHolder > button:hover {
+  background: #BD34FE;
+  color: white;
+}
+
+.ButtonHolder > input {
+  padding: 0.5em 1em;
+  font-size: 1rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  border: 2px solid #41D1FF;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  transition: background 300ms, color 300ms;
+  width: 60%;
+}
+
+.PlayerList {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+}
+.PlayerList > li {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  list-style-type: none;
+  padding: 0;
+  width: 100%;
+  gap: 1rem;
+}
+.PlayerList > li > p {
+  font-size: 1rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  font-size: 1.2rem;
+}
