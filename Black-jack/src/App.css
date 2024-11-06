@@ -149,3 +149,11 @@ td {
   letter-spacing: 1px;
   font-size: 1.2rem;
 }
+
+.TitleContainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+}

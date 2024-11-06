@@ -2,46 +2,49 @@ import { Table } from "../components/Table";
 // import { GameView } from "../components/GameView";
 // import { GameCreation } from "../components/GameView";
 
-import useCreateGame from "../hooks/useCreateGame"
+import useFetchGame from "../hooks/useFetchGame";
 import useDiceThrow from "../hooks/useDiceThrow";
 import usePlayerOut from "../hooks/usePlayerOut";
-import useJoinGame from "../hooks/useJoinGame";
 
+import { useParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
 
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 export function Game() {
-    const { createGame } = useCreateGame();
+    const { id } = useParams();
+
+    const { fetchGame } = useFetchGame();
     const { diceThrow } = useDiceThrow();
     const { playerOut } = usePlayerOut();
-    const { joinGame } = useJoinGame();
-    const [game, setGame] = useState({});
-    const [gameName, setGameName] = useState("");
-    const [diceNumber, setDiceNumber] = useState(1);
-    const [playerList, setPlayerList] = useState([]);
-    const [playerName, setPlayerName] = useState("");
-    const [errorMessage, setErrorMessage] = useState("");
-    const [joinGameId, setJoinGameId] = useState("");
 
-    const [gameId, setGameId] = useState("");
+    const [game, setGame] = useState({});
+    const [diceNumber, setDiceNumber] = useState(1);
 
     const socket = new WebSocket(
       `ws://${window.location.host}/ws/game/40`
     );
-    console.log("Socket:", socket);
+    
     socket.onmessage = function (event) {
       console.log("Event:", event);
       const data = JSON.parse(event.data);
       console.log("Message from server:", data.message);
-      // Mettre à jour l'état du jeu avec les nouvelles données
-      fetchGame(gameId);
+      fetchGame(id);
     };
-    useEffect(() => {
-      if (gameId) {
-        console.log("Game ID:", gameId);
 
-        
+    const handleFetchData = async () => {
+      const gameData = await fetchGame(id);
+      setGame(gameData);
+    };
+
+    useEffect(() => {
+      console.log(id);
+      if (!game.id){
+        handleFetchData();
+      }
+      if (id) {
+        fetchGame(id);
 
         socket.onclose = function (event) {
           console.error("WebSocket closed unexpectedly");
@@ -50,36 +53,9 @@ export function Game() {
         return () => {
         };
       }
-    }, [socket, gameId]);
-
-    const handleCreateGame = async () => {
-      if (playerList.length < 1) {
-        setErrorMessage("Il faut au moins un joueur pour commencer la partie");
-        return;
-      }
-      setErrorMessage("");
-      const newGame = await createGame(gameName == "" ? "Black Jack" : gameName, playerList);
-      setGame(newGame);
-      setGameId(newGame.id);
-    };
-
-    const handleJoinGame = async () => {
-    if (playerList.length < 1) {
-      setErrorMessage(
-        "Il faut au moins un joueur pour rejoindre la partie"
-      );
-      return;
-    }
-    setErrorMessage("");
-      const gameResult = await joinGame(joinGameId, playerList);
-      setGame(gameResult);
-      setGameId(gameResult.id);
-    }
+    }, [socket, id]);
 
     const handleDiceThrow = async () => {
-      if (gameName == "") {
-        setGameName("Black Jack");
-      }
       const gameResult = await diceThrow(game.id, diceNumber);
       setGame(gameResult);
     };
@@ -99,7 +75,10 @@ export function Game() {
             <Table game={game} />
 
             {game.ended ? (
-              <p>Fin de la partie, {game.winner.name} a gagné !</p>
+              <>
+                <p>Fin de la partie, {game.winner.name} a gagné !</p>
+                  <Link to={"/"}>Revenir à l'accueil</Link>
+              </>
             ) : (
               <>
                 <input
@@ -116,65 +95,7 @@ export function Game() {
               </>
             )}
           </div>
-        ) : (
-          <div>
-            <h2 className="SubTitle">Entrez le nom de la partie</h2>
-            {errorMessage != "" ? <h2>{errorMessage}</h2> : null}
-            <div className="ButtonHolder">
-              <input
-                type="text"
-                value={gameName}
-                onChange={(e) => {
-                  setGameName(e.target.value);
-                }}
-              />
-              <button onClick={handleCreateGame}>Créer la partie</button>
-            </div>
-            <div className="ButtonHolder">
-              <input
-                type="text"
-                value={playerName}
-                onChange={(e) => {
-                  setPlayerName(e.target.value);
-                }}
-              />
-              <button
-                onClick={() => {
-                  if (!playerName) return;
-                  setPlayerList([...playerList, playerName]);
-                  setPlayerName("");
-                }}
-              >
-                Ajouter un(e) joueur(se)
-              </button>
-            </div>
-            <ul className="PlayerList">
-              {playerList.map((player, index) => (
-                <li key={index}>
-                  <p>Nom: {player}</p>
-                  <button
-                    onClick={() => {
-                      setPlayerList([
-                        ...playerList.slice(0, index),
-                        ...playerList.slice(index + 1),
-                      ]);
-                    }}
-                  >
-                    <Icon icon="twemoji:cross-mark" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <input
-              type="text"
-              value={joinGameId}
-              onChange={(e) => {
-                setJoinGameId(e.target.value);
-              }}
-            />
-            <button onClick={handleJoinGame}>Rejoindre une partie</button>
-          </div>
-        )}
+        ) : null}
       </div>
     );
 }

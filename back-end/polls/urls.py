@@ -1,7 +1,9 @@
 from ninja import NinjaAPI, ModelSchema, Schema
 from polls.models import Game, Player
 from django.http import Http404
-from tools.Dice import *
+from tools.dice import *
+from tools.decideWinner import *
+
 from typing import Optional
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -99,12 +101,16 @@ def dice_throw(request, game_id: int, nb_dices: int):
 
         # Lancer les dés pour le dealer
         if game.dealer.score < 17:
-            game.dealer.score += ThrowDice(AIDice(game.dealer.score))
-            if game.dealer.score == 21:
-                    game.ended = True
-                    game.winner = game.dealer
-                    game.dealer.save()
-            if game.dealer.score > 21:
+            nb_dice = AIDice(game.dealer.score)
+            if nb_dice > 0:
+                game.dealer.score += ThrowDice(nb_dice)
+                if game.dealer.score == 21:
+                        game.ended = True
+                        game.winner = game.dealer
+                        game.dealer.save()
+                if game.dealer.score > 21:
+                    game.dealer.out = True
+            else:
                 game.dealer.out = True
             game.dealer.save()
 
@@ -128,17 +134,9 @@ def dice_throw(request, game_id: int, nb_dices: int):
                 player.save()
 
         # Vérifier si tous les joueurs sont out
-        if all(player.out for player in game.players.exclude(pk=game.dealer.id)):
+        if all(player.out for player in game.players.all().exclude(pk=game.winner.id if game.winner else None)):
             game.ended = True
-            if not game.dealer.out or game.dealer.score == 21:
-                game.winner = game.dealer
-            else:
-                players = list(game.players.exclude(pk=-1))
-                maxi = players[0]
-                for player in game.players:
-                    if player.score >= maxi.score and player.score <= 21:
-                        maxi = player
-                game.winner = maxi
+            game.winner = decideWinner(game)
         game.turn += 1
 
         game.save()
@@ -154,6 +152,10 @@ def patch_player_out(request, game_id: int, player_id: int):
         player = Player.objects.get(pk=player_id)
         player.out = True
         player.save()
+        if all(player.out for player in game.players.all().exclude(pk=game.winner.id if game.winner else None)):
+            game.ended = True
+            game.winner = decideWinner(game)
+
     except Game.DoesNotExist:
         raise Http404("Game does not exist")
     return game
