@@ -4,7 +4,6 @@ import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
 import useCreateGame from "../hooks/useCreateGame";
 import useJoinGame from "../hooks/useJoinGame";
-import dices from '../assets/dices.png'
 
 export function Home() {
     const navigate = useNavigate();
@@ -36,7 +35,8 @@ export function Home() {
       setErrorMessage("");
       const newGame = await createGame(
         gameName == "" ? "Black Jack" : gameName,
-        playerList
+        playerList,
+        window.location.host.split(":", 1)[0]
       );
       setGame(newGame);
     };  
@@ -49,18 +49,17 @@ export function Home() {
         return;
       }
       setErrorMessage("");
-      const gameResult = await joinGame(joinGameId, playerList);
+      const gameResult = await joinGame(
+        joinGameId,
+        playerList,
+        window.location.host.split(":", 1)[0]
+      );
       setGame(gameResult);
     };
     
   return (
     <>
-      <div>
-        <div className="TitleContainer">
-          <img src={dices} alt="" />
-          <h1>Black Jack</h1>
-          <img src={dices} alt="" />
-        </div>
+      <div className="MainGame">
         <h2 className="SubTitle">Entrez le nom de la partie</h2>
         {errorMessage != "" ? <h2>{errorMessage}</h2> : null}
         <div className="ButtonHolder">
@@ -74,42 +73,45 @@ export function Home() {
           />
           <button onClick={handleCreateGame}>Créer la partie</button>
         </div>
-        <div className="ButtonHolder">
-          <input
-            type="text"
-            value={playerName}
-            placeholder="Nom du joueur"
-            onChange={(e) => {
-              setPlayerName(e.target.value);
-            }}
-          />
-          <button
-            onClick={() => {
-              if (!playerName) return;
-              setPlayerList([...playerList, playerName]);
-              setPlayerName("");
-            }}
-          >
-            Ajouter un(e) joueur(se)
-          </button>
+        <div className="PlayerArea">
+          <h2 className="SubTitle">Entrez le nom du joueur</h2>
+          <div className="ButtonHolder">
+            <input
+              type="text"
+              value={playerName}
+              placeholder="Nom du joueur"
+              onChange={(e) => {
+                setPlayerName(e.target.value);
+              }}
+            />
+            <button
+              onClick={() => {
+                if (!playerName) return;
+                setPlayerList([...playerList, playerName]);
+                setPlayerName("");
+              }}
+            >
+              Ajouter un(e) joueur(se)
+            </button>
+          </div>
+          <ul className="PlayerList">
+            {playerList.map((player, index) => (
+              <li key={index}>
+                <p>Nom: {player}</p>
+                <button
+                  onClick={() => {
+                    setPlayerList([
+                      ...playerList.slice(0, index),
+                      ...playerList.slice(index + 1),
+                    ]);
+                  }}
+                >
+                  <Icon icon="twemoji:cross-mark" />
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
-        <ul className="PlayerList">
-          {playerList.map((player, index) => (
-            <li key={index}>
-              <p>Nom: {player}</p>
-              <button
-                onClick={() => {
-                  setPlayerList([
-                    ...playerList.slice(0, index),
-                    ...playerList.slice(index + 1),
-                  ]);
-                }}
-              >
-                <Icon icon="twemoji:cross-mark" />
-              </button>
-            </li>
-          ))}
-        </ul>
         <div className="ButtonHolder">
           <input
             type="text"

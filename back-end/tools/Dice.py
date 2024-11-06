@@ -14,7 +14,9 @@ def AIDice(dealerScore: int):
             if max_roll == 1:
                 max_dices -= 1
                 break
-    if max_dices == 2 and dealerScore + 4 * 2 > 21:
+    if max_dices == 3 and dealerScore + 6 * 3 > 21:
+        return 2
+    if max_dices == 2 and dealerScore + 6 * 2 > 21:
         return 1
     if max_dices == 1 and dealerScore + 3 > 21:
         return 0

@@ -1,7 +1,7 @@
 export default function useCreateGame() {
-  const createGame = async (gameName, playerList) => {
+  const createGame = async (gameName, playerList, ip) => {
     try {
-      const response = await fetch("http://10.111.9.24:8000/api/create_game", {
+      const response = await fetch(`http://${ip}:8000/api/create_game`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

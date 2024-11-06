@@ -22,6 +22,7 @@ class GameSchema(ModelSchema):
     players: list[PlayerSchema]
     dealer: PlayerSchema
     winner: Optional[PlayerSchema]
+    current_player: Optional[PlayerSchema]
 
     @staticmethod
     def resolve_players(obj):
@@ -49,7 +50,6 @@ def add(request, add_game: AddGameSchema):
     
     dealer = Player.objects.create(name="Dealer", game=game)
     game.dealer = dealer
-    game.save()
 
 
     for player in add_game.players:
@@ -57,6 +57,9 @@ def add(request, add_game: AddGameSchema):
             name = player,
             game = game
         )
+    game.current_player = dealer
+
+    game.save()
 
     return game
 
@@ -99,62 +102,72 @@ def dice_throw(request, game_id: int, nb_dices: int):
         if game.ended:
             return game
 
-        # Lancer les dés pour le dealer
-        if game.dealer.score < 17:
-            nb_dice = AIDice(game.dealer.score)
-            if nb_dice > 0:
-                game.dealer.score += ThrowDice(nb_dice)
-                if game.dealer.score == 21:
-                        game.ended = True
-                        game.winner = game.dealer
-                        game.dealer.save()
-                if game.dealer.score > 21:
-                    game.dealer.out = True
+        if game.current_player == game.dealer:
+            if game.dealer.score < 17:
+                game.dealer.score += ThrowDice(AIDice(game.dealer.score))
+                game.dealer.out = True if game.dealer.score > 17 else False
             else:
                 game.dealer.out = True
             game.dealer.save()
 
-        # Lancer les dés pour les joueurs
-        for player in game.players.exclude(pk=game.dealer.id):
-            if not player.out:
-                if player.id == game.players.exclude(pk=game.dealer.id)[0].id:
-                    player.score += ThrowDice(nb_dices)
-                else:
-                    if (AIDice(player.score)) > 0:
-                        player.score += ThrowDice(AIDice(player.score))
-                    else:
-                        player.out = True
-                if player.score == 21:
-                    game.ended = True
-                    game.winner = player
-                    player.save()
-                    break
-                elif player.score > 21:
+        else:
+            if not game.current_player.out:
+                player = Player.objects.get(pk=game.current_player.id)
+                player.score += ThrowDice(nb_dices)
+                player.out = True if game.dealer.score > 21 else False
+
+                if player.score >= 21:
                     player.out = True
                 player.save()
-
-        # Vérifier si tous les joueurs sont out
-        if all(player.out for player in game.players.all().exclude(pk=game.winner.id if game.winner else None)):
+                
+        game.save()
+        player_list = game.players.all().exclude(pk=game.winner.id if game.winner else None)
+        
+        if all(player.out for player in player_list) or len(player_list.filter(score=21)):
             game.ended = True
             game.winner = decideWinner(game)
-        game.turn += 1
-
+        else:
+            game.turn += 1
+            in_player_list = player_list.exclude(out=True)
+            in_player_list_len = len(in_player_list)
+            if in_player_list_len > 0:
+                game.current_player = in_player_list[game.turn % in_player_list_len]            
+            else:
+                game.current_player = None
         game.save()
+
         return game
     except Game.DoesNotExist:
         raise Http404("Game does not exist")
     
 
-@api.patch("/game/player_out/{game_id}/{player_id}", response=GameSchema)
-def patch_player_out(request, game_id: int, player_id: int):
+@api.patch("/game/player_out/{game_id}", response=GameSchema)
+def patch_player_out(request, game_id: str):
     try:
         game = Game.objects.get(pk=game_id)
-        player = Player.objects.get(pk=player_id)
+        player = Player.objects.get(pk=game.current_player.id)
         player.out = True
         player.save()
+
+        player_list = game.players.all().exclude(pk=game.winner.id if game.winner else None)
+
         if all(player.out for player in game.players.all().exclude(pk=game.winner.id if game.winner else None)):
             game.ended = True
             game.winner = decideWinner(game)
+        
+        if all(player.out for player in player_list) or len(player_list.filter(score=21)):
+            game.ended = True
+            game.winner = decideWinner(game)
+        else:
+            game.turn += 1
+            in_player_list = player_list.exclude(out=True)
+            in_player_list_len = len(in_player_list)
+            if in_player_list_len > 0:
+                game.current_player = in_player_list[game.turn % in_player_list_len]            
+            else:
+                game.current_player = None
+
+        game.save()
 
     except Game.DoesNotExist:
         raise Http404("Game does not exist")

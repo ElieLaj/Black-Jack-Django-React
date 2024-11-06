@@ -1,8 +1,8 @@
 export default function useJoinGame() {
-  const joinGame = async (game_id, players) => {
+  const joinGame = async (game_id, players, ip) => {
     try {
       const response = await fetch(
-        "http://10.111.9.24:8000/api/join_game/" + game_id + "/" + players,
+        `http://${ip}:8000/api/join_game/${game_id}/${players}`,
         {
           method: "PUT",
           headers: {

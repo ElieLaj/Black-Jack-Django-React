@@ -1,7 +1,7 @@
 export default function useFetchGame() {
-  const fetchGame = async (gameId) => {
+  const fetchGame = async (gameId, ip) => {
     try {
-      const response = await fetch("http://10.111.9.24:8000/api/game/"+gameId, {
+      const response = await fetch(`http://${ip}:8000/api/game/${gameId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

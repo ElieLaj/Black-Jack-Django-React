@@ -1,7 +1,6 @@
 import { PlayerRow } from './PlayerRow';
 
 export function Table({game}) {
-    console.log(game);
     const players = game.players;
     return (
       <div className="TableContainer">

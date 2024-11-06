@@ -19,7 +19,8 @@ class Game(models.Model):
     ended = models.BooleanField(default=False)
     dealer = models.ForeignKey('Player', related_name='dealt_games', on_delete=models.SET_NULL, null=True, blank=True)
     winner = models.ForeignKey('Player', related_name='won_games', on_delete=models.SET_NULL, null=True, blank=True, default=None)
-  
+    current_player = models.ForeignKey('Player', related_name='current_turn', on_delete=models.SET_NULL, null=True, blank=True)
+
 class Player(models.Model):
     game = models.ForeignKey(Game, related_name='players', on_delete=models.CASCADE)
     name = models.CharField(max_length=50)

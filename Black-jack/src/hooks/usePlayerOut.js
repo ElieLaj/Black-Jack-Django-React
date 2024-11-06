@@ -1,19 +1,15 @@
 export default function usePlayerOut() {
-  const playerOut = async (game_id, player_id) => {
+  const playerOut = async (game_id, ip) => {
     try {
       const response = await fetch(
-        "http://10.111.9.24:8000/api/game/player_out/" +
-          game_id +
-          "/" +
-          player_id,
+        `http://${ip}:8000/api/game/player_out/${game_id}`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            game_id: game_id,
-            player_id: player_id,
+            game_id: game_id
           }),
         }
       );
