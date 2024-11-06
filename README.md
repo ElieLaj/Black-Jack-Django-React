@@ -42,3 +42,5 @@ npm run build
 
 Lancer le serveur Vite:
 npm run host
+
+PS: Le mode multijoueur n'a pas marché
