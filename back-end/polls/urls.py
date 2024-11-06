@@ -1,62 +1,36 @@
 from ninja import NinjaAPI, ModelSchema, Schema
-from polls.models import Choice, Question, Game, Player
-from django.utils import timezone
+from polls.models import Game, Player
 from django.http import Http404
+from tools.Dice import *
+from typing import Optional
 
 api = NinjaAPI()
-
-class ChoiceSchema(ModelSchema):
-    class Meta:
-        model = Choice
-        fields = ["id", "choice_text", "votes"]
-
-
-class QuestionSchema(ModelSchema):
-    class Meta:
-        model = Question
-        fields = ["id", "question_text", "pub_date"]
-    choices: list[ChoiceSchema]
-
-class AddQuestionSchema(Schema):
-    question_text: str
-    choices: list[str]
-
-# @api.post("/create_question", response=QuestionSchema)
-# def add(request, add_question: AddQuestionSchema):
-#     question = Question.objects.create(
-#         question_text = add_question.question_text, pub_date=timezone.now()
-#         )
-    
-#     for choice in add_question.choices:
-#         Choice.objects.create(
-#             choice_text = choice,
-#             question = question
-#         )
-
-#     return question
-
-# @api.get("/question/{question_id}", response=QuestionSchema)
-# def get(request, question_id: int):
-#     question = Question.objects.get(pk=question_id)
-#     return question
-
-# ----------------
 
 class PlayerSchema(ModelSchema):
     class Meta:
         model = Player
-        fields = ["id", "name", "score"]
+        fields = ["id", "name", "score", "out"]
 
 class GameSchema(ModelSchema):
     class Meta:
         model = Game
         fields = ["id", "name", "turn", "ended"]
     players: list[PlayerSchema]
+    dealer: PlayerSchema
+    winner: Optional[PlayerSchema]
 
+    @staticmethod
+    def resolve_players(obj):
+        players = obj.players.exclude(id=obj.dealer_id)
+        return players
 
 class AddGameSchema(Schema):
     name: str
     players: list[str]
+
+class ThrowDicesSchema(Schema):
+    game_id: str
+    nb_dices: int
 
 
 @api.post("/create_game", response=GameSchema)
@@ -65,11 +39,17 @@ def add(request, add_game: AddGameSchema):
         name = add_game.name
         )
     
+    dealer = Player.objects.create(name="Dealer", game=game)
+    game.dealer = dealer
+    game.save()
+
+
     for player in add_game.players:
         Player.objects.create(
             name = player,
             game = game
         )
+
     return game
 
 @api.get("/game/{game_id}", response=GameSchema)
@@ -79,3 +59,51 @@ def get(request, game_id: int):
     except Game.DoesNotExist:
         raise Http404("Game does not exist")
     return game
+
+@api.put("/game/dice_throw/{game_id}/{nb_dices}", response=GameSchema)
+def dice_throw(request, game_id: int, nb_dices: int):
+    try:
+        game = Game.objects.get(pk=game_id)
+        if game.ended:
+            return game
+
+        # Lancer les dés pour le dealer
+        if game.dealer.score < 17:
+            game.dealer.score += ThrowDice(AIDice(game.dealer.score))
+            if game.dealer.score == 21:
+                    game.ended = True
+                    game.winner = game.dealer
+                    game.dealer.save()
+            if game.dealer.score > 21:
+                game.dealer.out = True
+            game.dealer.save()
+
+        # Lancer les dés pour les joueurs
+        for player in game.players.exclude(pk=game.dealer.id):
+            if not player.out:
+                if player.id == game.players.exclude(pk=game.dealer.id)[0].id:
+                    player.score += ThrowDice(nb_dices)
+                else:
+                    if (AIDice(player.score)) > 0:
+                        player.score += ThrowDice(AIDice(player.score))
+                    else:
+                        player.out = True
+                if player.score == 21:
+                    game.ended = True
+                    game.winner = player
+                    player.save()
+                    break
+                elif player.score > 21:
+                    player.out = True
+                player.save()
+
+        # Vérifier si tous les joueurs sont out
+        if all(player.out for player in game.players.exclude(pk=game.dealer.id)):
+            game.ended = True
+            if not game.dealer.out or game.dealer.score == 21:
+                game.winner = game.dealer
+
+        game.save()
+        return game
+    except Game.DoesNotExist:
+        raise Http404("Game does not exist")

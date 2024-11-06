@@ -1,11 +1,13 @@
 import { PlayerRow } from './PlayerRow';
 
-export function Table({players}) {
+export function Table({game}) {
+    console.log(game);
+    const players = game.players;
     return (
         <div className='TableContainer'>
             <table className='PlayerTable'>
                 <caption>
-                    Tableau des joueurs
+                    Tableau des joueurs de la partie: {game.name}
                 </caption>
                 <thead className="PlayerTableHeader">
                     <tr>
