@@ -2,7 +2,10 @@ export default function useDiceThrow() {
   const diceThrow = async (game_id, nb_dices) => {
     try {
       const response = await fetch(
-        "http://localhost:8000/api/game/dice_throw/" + game_id + "/" + nb_dices,
+        "http://10.111.9.24:8000/api/game/dice_throw/" +
+          game_id +
+          "/" +
+          nb_dices,
         {
           method: "PUT",
           headers: {

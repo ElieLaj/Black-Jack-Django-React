@@ -59,14 +59,15 @@ def add(request, add_game: AddGameSchema):
     return game
 
 @api.put("/join_game/{game_id}/{players}", response=GameSchema)
-def join(request, game_id, player):
+def join(request, game_id, players):
     try:
         game = Game.objects.get(pk=game_id)
     except Game.DoesNotExist:
         raise Http404("Game does not exist")
-
+    print(players)
+    players
     Player.objects.create(
-        name = player,
+        name = players,
         game = game
     )
 
@@ -75,7 +76,7 @@ def join(request, game_id, player):
         f'game_{game_id}',
         {
             'type': 'game_message',
-            'message': f'Player {player} has joined.',
+            'message': f'Player {players} has joined.',
         }
     )
     game.save()

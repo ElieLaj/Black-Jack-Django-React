@@ -44,6 +44,7 @@ INSTALLED_APPS = [
 ]
 
 ASGI_APPLICATION = 'bootcamp.asgi.application'
+WSGI_APPLICATION = 'bootcamp.wsgi.application'
 
 CHANNEL_LAYERS = {
     'default': {

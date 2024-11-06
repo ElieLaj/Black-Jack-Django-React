@@ -2,7 +2,7 @@ export default function usePlayerOut() {
   const playerOut = async (game_id, player_id) => {
     try {
       const response = await fetch(
-        "http://localhost:8000/api/game/player_out/" +
+        "http://10.111.9.24:8000/api/game/player_out/" +
           game_id +
           "/" +
           player_id,

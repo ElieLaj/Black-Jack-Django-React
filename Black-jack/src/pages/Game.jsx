@@ -27,19 +27,21 @@ export function Game() {
     const [gameId, setGameId] = useState("");
 
     const socket = new WebSocket(
-      `ws://${window.location.host}/ws/game/${gameId}/`
+      `ws://${window.location.host}/ws/game/40`
     );
-
+    console.log("Socket:", socket);
+    socket.onmessage = function (event) {
+      console.log("Event:", event);
+      const data = JSON.parse(event.data);
+      console.log("Message from server:", data.message);
+      // Mettre à jour l'état du jeu avec les nouvelles données
+      fetchGame(gameId);
+    };
     useEffect(() => {
       if (gameId) {
         console.log("Game ID:", gameId);
 
-        socket.onmessage = function (event) {
-          const data = JSON.parse(event.data);
-          console.log("Message from server:", data.message);
-          // Mettre à jour l'état du jeu avec les nouvelles données
-          fetchGame(gameId);
-        };
+        
 
         socket.onclose = function (event) {
           console.error("WebSocket closed unexpectedly");

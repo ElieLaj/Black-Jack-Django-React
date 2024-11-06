@@ -1,16 +1,21 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 
-class GameConsumer(AsyncWebsocketConsumer):
+class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.game_id = self.scope['url_route']['kwargs']['game_id']
         self.game_group_name = f'game_{self.game_id}'
         print(self.game_group_name)
-        # Join game group
+        # Join game group 
         await self.channel_layer.group_add(
             self.game_group_name,
             self.channel_name
         )
+
+        self.send(text_data=json.dumps({
+            'type': 'connection established',
+            'message': 'You are connected'
+        }))
 
         await self.accept()
 
